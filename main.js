@@ -1,6 +1,6 @@
 function listen(host, fn, ...additionalParams){
 	const handler = async (...args) => {
-		await fn(args, () => {
+		return await fn(args, () => {
 			host.removeListener(handler);
 		});
 	};
@@ -39,11 +39,12 @@ browser.tabs.onCreated.addListener(tab => {
 	listen(
 		browser.webRequest.onHeadersReceived,
 		async ([e], unsub)=>{
-			try{
-				await waitForActiveTab(tab.id);
-			} catch (e) {
-			}
-			unsub();
+			return {redirectUrl: browser.extension.getURL(`/handler.html?url=${encodeURIComponent(e.url)}`)}
+			// try{
+			// 	await waitForActiveTab(tab.id);
+			// } catch (e) {
+			// }
+			// unsub();
 		},
 		{
 			urls: ["<all_urls>"],

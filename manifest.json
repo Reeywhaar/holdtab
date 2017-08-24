@@ -22,6 +22,10 @@
 		"webRequestBlocking",
 		"<all_urls>"
 	],
+	"web_accessible_resources": [
+		"handler.html",
+		"handler.js"
+	],
 	"applications": {
 		"gecko": {
 			"id": "{ce5bf454-31f7-42d5-8fdf-7e8d353988f4}",
