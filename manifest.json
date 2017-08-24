@@ -21,5 +21,11 @@
 		"webRequest",
 		"webRequestBlocking",
 		"<all_urls>"
-	]
+	],
+	"applications": {
+		"gecko": {
+			"id": "{ce5bf454-31f7-42d5-8fdf-7e8d353988f4}",
+			"strict_min_version": "54.0"
+		}
+	}
 }
