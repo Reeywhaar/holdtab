@@ -36,6 +36,7 @@ async function waitForActiveTab(id){
 }
 
 browser.tabs.onCreated.addListener(tab => {
+	if (tab.active) return;
 	listen(
 		browser.webRequest.onHeadersReceived,
 		async ([e], unsub)=>{
