@@ -1,27 +1,49 @@
-function once(host, fn, ...additionalParams){
+function listen(host, fn, ...additionalParams){
 	const handler = async (...args) => {
-		host.removeListener(handler);
-		await fn(...args);
-	}
+		await fn(args, () => {
+			host.removeListener(handler);
+		});
+	};
 	host.addListener.call(host, handler, ...additionalParams);
 }
 
+async function waitForActiveTab(id){
+	if ((await browser.tabs.get(id)).active) return;
+	await new Promise(resolve => {
+		const handler = ([{tabId: uId}], unsub) => {
+			if(uId === id){
+				unsub();
+				resolve();
+			};
+		};
+
+		//fuckin event listeners, why are they must be so complicated
+		listen(
+			browser.tabs.onActivated,
+			handler,
+		);
+		listen(
+			browser.tabs.onRemoved,
+			([rId], unsub) => {
+				if(rId === id){
+					browser.tabs.onActivated.removeListener(handler);
+					unsub();
+					resolve();
+				};
+			},
+		);
+	});
+}
+
 browser.tabs.onCreated.addListener(tab => {
-	once(
+	listen(
 		browser.webRequest.onHeadersReceived,
-		async (e)=>{
-			if(tab.active) return;
-			await new Promise(resolve => {
-				once(browser.tabs.onActivated, info => {
-					if(info.tabId === tab.id && info.windowId === tab.windowId) resolve();
-				});
-				once(browser.tabs.onRemoved, (tabId, {windowId}) => {
-					const isCurrentTab = tabId === tab.id && windowId === tab.windowId;
-					if(isCurrentTab && browser.tabs.onActivated.hasListener(handler)){
-						browser.tabs.onActivated.removeListener(handler);
-					};
-				});
-			});
+		async ([e], unsub)=>{
+			try{
+				await waitForActiveTab(tab.id);
+			} catch (e) {
+			}
+			unsub();
 		},
 		{
 			urls: ["<all_urls>"],
