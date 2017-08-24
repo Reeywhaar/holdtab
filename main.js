@@ -36,15 +36,12 @@ async function waitForActiveTab(id){
 }
 
 browser.tabs.onCreated.addListener(tab => {
+	if(tab.active) return;
 	listen(
-		browser.webRequest.onHeadersReceived,
+		browser.webRequest.onBeforeRequest,
 		async ([e], unsub)=>{
+			unsub();
 			return {redirectUrl: browser.extension.getURL(`/handler.html?url=${encodeURIComponent(e.url)}`)}
-			// try{
-			// 	await waitForActiveTab(tab.id);
-			// } catch (e) {
-			// }
-			// unsub();
 		},
 		{
 			urls: ["<all_urls>"],
