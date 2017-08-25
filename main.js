@@ -1,32 +1,39 @@
-function listen(host, fn, ...additionalParams){
+function listen(host, fn, ...params){
 	const handler = async (...args) => {
 		await fn(args, () => {
 			host.removeListener(handler);
 		});
 	};
-	host.addListener.call(host, handler, ...additionalParams);
+	host.addListener.call(host, handler, ...params);
 }
+
+const handlers = new Map();
+
+browser.tabs.onActivated.addListener(async info => {
+	if(!handlers.has(info.tabId)) return;
+
+	await handlers.get(info.tabId)(
+		info,
+		()=>{
+			handlers.delete(info.tabId);
+		},
+	);
+});
+
+browser.tabs.onRemoved.addListener(tabId => {
+	if(handlers.has(tabId)){
+		console.log("has", tabId);
+	};
+	handlers.delete(tabId);
+});
 
 async function waitForActiveTab(id){
 	if ((await browser.tabs.get(id)).active) return;
 	await new Promise(resolve => {
-		const handler = ([{tabId: uId}], unsub) => {
-			if(uId === id){
-				unsub();
-				resolve();
-			};
-		};
-
-		//fuckin event listeners, why are they must be so complicated
-		listen(
-			browser.tabs.onActivated,
-			handler,
-		);
-		listen(
-			browser.tabs.onRemoved,
-			([rId], unsub) => {
-				if(rId === id){
-					browser.tabs.onActivated.removeListener(handler);
+		handlers.set(
+			id,
+			({tabId: uId}, unsub) => {
+				if(uId === id){
 					unsub();
 					resolve();
 				};
@@ -40,11 +47,10 @@ browser.tabs.onCreated.addListener(tab => {
 	listen(
 		browser.webRequest.onHeadersReceived,
 		async ([e], unsub)=>{
+			unsub();
 			try{
 				await waitForActiveTab(tab.id);
-			} catch (e) {
-			}
-			unsub();
+			} catch (e) {}
 		},
 		{
 			urls: ["<all_urls>"],
