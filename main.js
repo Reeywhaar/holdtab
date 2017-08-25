@@ -21,9 +21,6 @@ browser.tabs.onActivated.addListener(async info => {
 });
 
 browser.tabs.onRemoved.addListener(tabId => {
-	if(handlers.has(tabId)){
-		console.log("has", tabId);
-	};
 	handlers.delete(tabId);
 });
 
