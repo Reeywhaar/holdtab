@@ -13,3 +13,6 @@ sign:
 
 icon.png:
 	convert icon.psd[0] icon.png
+
+remove_artifacts:
+	rm ./web-ext-artifacts/*
