@@ -1,18 +1,16 @@
 include ./.env
 
-ignore_files = ".git" ".gitignore" "makefile" ".env" "web-ext-artifacts" "icon.psd" "README.MD"
-
 build:
-	web-ext build --ignore-files ${ignore_files}
+	web-ext build -s ext
 
 run:
-	web-ext run --bc
+	web-ext run --bc -s ext --firefox-profile ${WEB_EXT_FIREFOX_PROFILE}
 
 sign:
-	web-ext sign --api-key ${APIKEY} --api-secret ${APISECRET} --ignore-files ${ignore_files}
+	web-ext sign -s ext --api-key ${APIKEY} --api-secret ${APISECRET}
 
 icon.png:
-	convert icon.psd[0] icon.png
+	convert icon.psd[0] ext/icon.png
 
 remove_artifacts:
 	rm ./web-ext-artifacts/*
