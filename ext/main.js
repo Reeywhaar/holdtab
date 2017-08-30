@@ -1,6 +1,6 @@
 function listen(host, fn, ...params){
 	const handler = async (...args) => {
-		await fn(args, () => {
+		return await fn(args, () => {
 			host.removeListener(handler);
 		});
 	};
@@ -12,16 +12,17 @@ const handlers = new Map();
 browser.tabs.onActivated.addListener(async info => {
 	if(!handlers.has(info.tabId)) return;
 
-	await handlers.get(info.tabId)(
-		info,
-		()=>{
-			handlers.delete(info.tabId);
-		},
-	);
+	if(await handlers.get(info.tabId)(info.tabId)){
+		handlers.delete(info.tabId);
+	};
 });
 
-browser.tabs.onRemoved.addListener(tabId => {
-	handlers.delete(tabId);
+browser.tabs.onRemoved.addListener(async tabId => {
+	if(!handlers.has(tabId)) return;
+
+	if(await handlers.get(tabId)(tabId)){
+		handlers.delete(tabId);
+	};
 });
 
 async function waitForActiveTab(id){
@@ -29,11 +30,12 @@ async function waitForActiveTab(id){
 	await new Promise(resolve => {
 		handlers.set(
 			id,
-			({tabId: uId}, unsub) => {
+			(uId) => {
 				if(uId === id){
-					unsub();
 					resolve();
+					return true;
 				};
+				return false;
 			},
 		);
 	});
