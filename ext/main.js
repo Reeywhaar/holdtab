@@ -9,47 +9,34 @@ function listen(host, fn, ...params){
 
 const handlers = new Map();
 
-browser.tabs.onActivated.addListener(async info => {
-	if(!handlers.has(info.tabId)) return;
+async function onTabEvent(id){
+	if(!handlers.has(id)) return;
 
-	if(await handlers.get(info.tabId)(info.tabId)){
-		handlers.delete(info.tabId);
-	};
+	await handlers.get(id)()
+	handlers.delete(id);
+}
+
+browser.tabs.onActivated.addListener(info => {
+	onTabEvent(info.tabId);
 });
 
-browser.tabs.onRemoved.addListener(async tabId => {
-	if(!handlers.has(tabId)) return;
-
-	if(await handlers.get(tabId)(tabId)){
-		handlers.delete(tabId);
-	};
+browser.tabs.onRemoved.addListener(tabId => {
+	onTabEvent(tabId);
 });
 
 async function waitForActiveTab(id){
 	if ((await browser.tabs.get(id)).active) return;
 	await new Promise(resolve => {
-		handlers.set(
-			id,
-			(uId) => {
-				if(uId === id){
-					resolve();
-					return true;
-				};
-				return false;
-			},
-		);
+		handlers.set(id, () => resolve());
 	});
 }
 
 browser.tabs.onCreated.addListener(tab => {
 	if (tab.active) return;
-	listen(
-		browser.webRequest.onHeadersReceived,
-		async ([e], unsub)=>{
-			unsub();
-			try{
-				await waitForActiveTab(tab.id);
-			} catch (e) {}
+	browser.webRequest.onHeadersReceived.addListener(
+		async function handler(e){
+			browser.webRequest.onHeadersReceived.removeListener(handler);
+			await waitForActiveTab(tab.id);
 		},
 		{
 			urls: ["<all_urls>"],
