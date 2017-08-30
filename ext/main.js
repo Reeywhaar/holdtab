@@ -1,18 +1,9 @@
-function listen(host, fn, ...params){
-	const handler = async (...args) => {
-		return await fn(args, () => {
-			host.removeListener(handler);
-		});
-	};
-	host.addListener.call(host, handler, ...params);
-}
-
 const handlers = new Map();
 
 async function onTabEvent(id){
 	if(!handlers.has(id)) return;
 
-	await handlers.get(id)()
+	handlers.get(id)()
 	handlers.delete(id);
 }
 
