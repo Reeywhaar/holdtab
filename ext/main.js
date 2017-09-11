@@ -15,7 +15,7 @@
 		if(out.domains.length === 0){
 			out.regex = /!.*/i;
 		} else {
-			out.regex = new RegExp("("+out.domains.map(x => x.replace(/\./, "\\.")).join("|")+")$", "i");
+			out.regex = new RegExp("("+out.domains.map(x => x.replace(/\./g, "\\.")).join("|")+")$", "i");
 		}
 		return out;
 	}
