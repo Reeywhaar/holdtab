@@ -1,38 +1,80 @@
-const handlers = new Map();
+(async () => {
+	function oneOf(subj, ...objs){
+		for(let obj of objs){
+			if(subj === obj) return true;
+		}
+		return false;
+	}
 
-async function onTabEvent(id){
-	if(!handlers.has(id)) return;
+	async function getData(){
+		let out = await browser.storage.local.get(["mode", "domains"]);
+		out = Object.assign({
+			mode: "disable",
+			domains: [],
+		}, out);
+		if(out.domains.length === 0){
+			out.regex = /!.*/i;
+		} else {
+			out.regex = new RegExp("("+out.domains.map(x => x.replace(/\./, "\\.")).join("|")+")$", "i");
+		}
+		return out;
+	}
 
-	handlers.get(id)()
-	handlers.delete(id);
-}
-
-browser.tabs.onActivated.addListener(info => {
-	onTabEvent(info.tabId);
-});
-
-browser.tabs.onRemoved.addListener(tabId => {
-	onTabEvent(tabId);
-});
-
-async function waitForActiveTab(id){
-	if ((await browser.tabs.get(id)).active) return;
-	await new Promise(resolve => {
-		handlers.set(id, () => resolve());
+	let data = await getData();
+	browser.storage.onChanged.addListener(async e => {
+		data = await getData();
 	});
-}
 
-browser.tabs.onCreated.addListener(tab => {
-	if (tab.active) return;
-	browser.webRequest.onHeadersReceived.addListener(
-		async function handler(e){
-			browser.webRequest.onHeadersReceived.removeListener(handler);
-			await waitForActiveTab(tab.id);
-		},
-		{
-			urls: ["<all_urls>"],
-			tabId: tab.id,
-		},
-		["blocking"],
-	);
-});
+	function isHoldable(url){
+		url = new URL(url);
+		if(data.mode === "enable"){
+			return data.regex.test(url.host);
+		} else {
+			return !data.regex.test(url.host);
+		}
+	}
+
+	const handlers = new Map();
+
+	async function onTabEvent(id){
+		if(!handlers.has(id)) return;
+
+		handlers.get(id)()
+		handlers.delete(id);
+	}
+
+	browser.tabs.onActivated.addListener(info => {
+		onTabEvent(info.tabId);
+	});
+
+	browser.tabs.onRemoved.addListener(tabId => {
+		onTabEvent(tabId);
+	});
+
+	async function waitForActiveTab(id){
+		if ((await browser.tabs.get(id)).active) return;
+		await new Promise(resolve => {
+			handlers.set(id, () => resolve());
+		});
+	}
+
+	browser.tabs.onCreated.addListener(tab => {
+		if (tab.active) return;
+		browser.webRequest.onHeadersReceived.addListener(
+			async function handler(e){
+				for(let header of e.responseHeaders){
+					if(header.name.toLowerCase() === "location") return;
+				}
+				browser.webRequest.onHeadersReceived.removeListener(handler);
+				if(isHoldable(e.url)){
+					await waitForActiveTab(tab.id);
+				}
+			},
+			{
+				urls: ["<all_urls>"],
+				tabId: tab.id,
+			},
+			["blocking", "responseHeaders"],
+		);
+	});
+})()

@@ -1,0 +1,53 @@
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>HoldTab Proferences</title>
+	<style>
+		.content{
+			display:flex;
+			flex-direction: column;
+		}
+
+		.domains-list{
+			margin-top:1em;
+		}
+
+		.domains-list__textarea{
+			display: block;
+			width:100%;
+			min-height:10em;
+			resize: vertical;
+		}
+
+		.domains-list__notes{
+			font-style: italic;
+			opacity: .6;
+			margin:0;
+			padding: 0;
+			padding-left: 1em;
+		}
+
+		.actions{
+			margin-top: 1em;
+		}
+	</style>
+</head>
+<body>
+	<div class="content">
+		<select class="mode-select">
+			<option value="disable" selected>Disable on domains below</option>
+			<option value="enable">Enable only on domains below</option>
+		</select>
+		<div class="domains-list">
+			<label class="domains-list__label">Filtered domains:<textarea class="domains-list__textarea"></textarea><label>
+			<ul class="domains-list__notes">
+				<li class="domains-list__note">Separate domains by comma e.g "example.com, mozilla.org"</li>
+				<li class="domains-list__note">Note that domain listed above will also include it's subdomain. For example "example.com" will include "sub.example.com". But otherwise is not true: "sub.example.com" will not include "example.com"</li>
+			</ul>
+		</div>
+	</div>
+	<script src="options.js"></script>
+</body>
+</html>
