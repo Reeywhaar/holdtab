@@ -67,6 +67,9 @@
 		if (tab.active) return;
 		browser.webRequest.onHeadersReceived.addListener(
 			async function handler(e){
+				//Check if headers contain "Location" header.
+				//If so, then request is redirect, and must
+				//be passed, so that filter list will react on proper domain
 				for(let header of e.responseHeaders){
 					if(header.name.toLowerCase() === "location") return;
 				}
