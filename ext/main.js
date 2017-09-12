@@ -6,7 +6,7 @@
 		return false;
 	}
 
-	//thanks you: https://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex
+	//thank you: https://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex
 	function escapeRegExp(str) {
 		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 	}
