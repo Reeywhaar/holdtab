@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "HoldTab",
   "version": "0.0.10pre3",
-	"description": "Delays new tab loading until you focus it",
+	"description": "Delays background tab loading until you activate it",
 	"author": "Mikhail Vyrtsev",
 	"developer": {
 		"name": "Mikhail Vyrtsev",
