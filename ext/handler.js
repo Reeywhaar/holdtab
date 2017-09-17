@@ -23,7 +23,7 @@ function sleep(n){
 function main(){
 	const data = parseQuery(window.location);
 	if(!("url" in data)) return;
-	document.title = `Hold: ${data.url}`;
+	document.title = data.url;
 	window.addEventListener("focus", async (e) => {
 		await sleep(1000);
 		window.location.replace(data.url);
