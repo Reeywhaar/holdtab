@@ -4,7 +4,7 @@ build:
 	web-ext build -s ext
 
 run:
-	web-ext run --bc -s ext --firefox-profile ${WEB_EXT_FIREFOX_PROFILE}
+	web-ext run --bc -f ${WEB_EXT_FIREFOX_BIN} -s ext --firefox-profile ${WEB_EXT_FIREFOX_PROFILE}
 
 sign:
 	web-ext sign -s ext --api-key ${APIKEY} --api-secret ${APISECRET}
