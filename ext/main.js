@@ -11,6 +11,22 @@
 		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 	}
 
+	function parseQuery(url){
+		url = new URL(url);
+		return url.search
+		.substr(1)
+		.split("&")
+		.map(x => {
+			return x
+			.split("=")
+			.map(x => decodeURIComponent(x));
+		})
+		.reduce((c, x) => {
+			c[x[0]] = x[1];
+			return c;
+		}, {});
+	}
+
 	async function getData(){
 		let out = await browser.storage.local.get(["mode", "domains"]);
 		out = Object.assign({
@@ -39,50 +55,48 @@
 		}
 	}
 
-	const handlers = new Map();
-
-	async function onTabEvent(id){
-		if(!handlers.has(id)) return;
-
-		handlers.get(id)()
-		handlers.delete(id);
-	}
-
-	browser.tabs.onActivated.addListener(info => {
-		onTabEvent(info.tabId);
-	});
-
-	browser.tabs.onRemoved.addListener(tabId => {
-		onTabEvent(tabId);
-	});
-
-	async function waitForActiveTab(id){
-		if ((await browser.tabs.get(id)).active) return;
-		await new Promise(resolve => {
-			handlers.set(id, () => resolve());
+	browser.tabs.onActivated.addListener(async ({tabId, windowId}) => {
+		const tab = await browser.tabs.get(tabId);
+		if(tab.url.indexOf(browser.extension.getURL("handler.html")) !== 0) return;
+		const requestData = parseQuery(tab.url);
+		requestData.headers = JSON.parse(requestData.headers);
+		browser.webRequest.onBeforeSendHeaders.addListener(
+			async function handler(e){
+				browser.webRequest.onBeforeSendHeaders.removeListener(handler);
+				return {requestHeaders: data.headers};
+			},
+			{
+				urls: ["<all_urls>"],
+				tabId: tab.id,
+			},
+			["blocking", "requestHeaders"],
+		);
+		await browser.tabs.update(tab.id, {
+			url: requestData.url,
 		});
-	}
+	})
 
 	browser.tabs.onCreated.addListener(tab => {
-		if (tab.active) return;
-		browser.webRequest.onHeadersReceived.addListener(
+		browser.webRequest.onBeforeSendHeaders.addListener(
 			async function handler(e){
-				//Check if headers contain "Location" header.
-				//If so, then request is redirect, and must
-				//be passed, so that filter list will react on proper domain
-				for(let header of e.responseHeaders){
-					if(header.name.toLowerCase() === "location") return;
+				if((await browser.tabs.get(tab.id)).active){
+					browser.webRequest.onBeforeSendHeaders.removeListener(handler);
+					return;
 				}
-				browser.webRequest.onHeadersReceived.removeListener(handler);
-				if(isHoldable(e.url)){
-					await waitForActiveTab(tab.id);
+				if(e.type === "main_frame" && isHoldable(e.url)){
+					const handlerURL = browser.extension.getURL(`handler.html?url=${encodeURIComponent(e.url)}&headers=${encodeURIComponent(JSON.stringify(e.requestHeaders))}`);
+					browser.webRequest.onBeforeSendHeaders.removeListener(handler);
+					// well, fuck, instead of line below I need a hack, because of security error in ff55
+					// return {redirectUrl: handlerURL}
+					await browser.tabs.update(tab.id, {url: handlerURL});
+					return {cancel: true};
 				}
 			},
 			{
 				urls: ["<all_urls>"],
 				tabId: tab.id,
 			},
-			["blocking", "responseHeaders"],
+			["blocking", "requestHeaders"],
 		);
 	});
 })()
