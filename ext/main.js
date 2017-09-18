@@ -63,7 +63,8 @@
 		browser.webRequest.onBeforeSendHeaders.addListener(
 			async function handler(e){
 				browser.webRequest.onBeforeSendHeaders.removeListener(handler);
-				return {requestHeaders: requestData.headers};
+				e.requestHeaders = requestData.headers
+				return {requestHeaders: e.requestHeaders};
 			},
 			{
 				urls: ["<all_urls>"],
