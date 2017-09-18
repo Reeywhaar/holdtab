@@ -14,11 +14,18 @@ function parseQuery(url){
 	}, {});
 }
 
+function sleep(n){
+	return new Promise(resolve => {
+		setTimeout(resolve, n);
+	});
+};
+
 function main(){
 	const data = parseQuery(window.location);
 	if(!("url" in data)) return;
 	document.title = data.url;
 	window.addEventListener("focus", async (e) => {
+		await sleep(500);
 		window.location.replace(data.url);
 	});
 }

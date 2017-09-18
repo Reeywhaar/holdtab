@@ -72,6 +72,9 @@
 			},
 			["blocking", "requestHeaders"],
 		);
+		await browser.tabs.update(tab.id, {
+			url: requestData.url,
+		});
 		await browser.history.deleteUrl({
 			url: tab.url,
 		});
