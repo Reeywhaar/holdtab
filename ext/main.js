@@ -63,7 +63,7 @@
 		browser.webRequest.onBeforeSendHeaders.addListener(
 			async function handler(e){
 				browser.webRequest.onBeforeSendHeaders.removeListener(handler);
-				return {requestHeaders: data.headers};
+				return {requestHeaders: requestData.headers};
 			},
 			{
 				urls: ["<all_urls>"],
@@ -71,8 +71,8 @@
 			},
 			["blocking", "requestHeaders"],
 		);
-		await browser.tabs.update(tab.id, {
-			url: requestData.url,
+		await browser.history.deleteUrl({
+			url: tab.url,
 		});
 	})
 
