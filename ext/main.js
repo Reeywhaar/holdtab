@@ -66,6 +66,9 @@
 				requestData.headers = JSON.parse(requestData.headers);
 				browser.webRequest.onBeforeSendHeaders.removeListener(handler);
 				e.requestHeaders = requestData.headers;
+				await browser.history.deleteUrl({
+					url: e.originUrl,
+				});
 				return {requestHeaders: e.requestHeaders};
 			},
 			{
