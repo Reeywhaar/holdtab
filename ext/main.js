@@ -56,28 +56,24 @@
 	}
 
 	browser.tabs.onActivated.addListener(async ({tabId, windowId}) => {
-		const tab = await browser.tabs.get(tabId);
-		if(tab.url.indexOf(browser.extension.getURL("handler.html")) !== 0) return;
-		const requestData = parseQuery(tab.url);
-		requestData.headers = JSON.parse(requestData.headers);
 		browser.webRequest.onBeforeSendHeaders.addListener(
 			async function handler(e){
+				if(e.originUrl.indexOf(browser.extension.getURL("handler.html")) !== 0) {
+					browser.webRequest.onBeforeSendHeaders.removeListener(handler);
+					return;
+				};
+				const requestData = parseQuery(e.originUrl);
+				requestData.headers = JSON.parse(requestData.headers);
 				browser.webRequest.onBeforeSendHeaders.removeListener(handler);
-				e.requestHeaders = requestData.headers
+				e.requestHeaders = requestData.headers;
 				return {requestHeaders: e.requestHeaders};
 			},
 			{
 				urls: ["<all_urls>"],
-				tabId: tab.id,
+				tabId: tabId,
 			},
 			["blocking", "requestHeaders"],
 		);
-		await browser.tabs.update(tab.id, {
-			url: requestData.url,
-		});
-		await browser.history.deleteUrl({
-			url: tab.url,
-		});
 	})
 
 	browser.tabs.onCreated.addListener(tab => {

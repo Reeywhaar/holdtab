@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "HoldTab",
-  "version": "0.0.11pre6",
+  "version": "0.0.11pre7",
 	"description": "Delays background tab loading until you activate it",
 	"author": "Mikhail Vyrtsev",
 	"developer": {
@@ -24,7 +24,6 @@
 		"storage",
 		"tabs",
 		"webRequest",
-		"history",
 		"webRequestBlocking",
 		"<all_urls>"
 	],

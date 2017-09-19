@@ -25,7 +25,6 @@ function main(){
 	if(!("url" in data)) return;
 	document.title = data.url;
 	window.addEventListener("focus", async (e) => {
-		await sleep(500);
 		window.location.replace(data.url);
 	});
 }
