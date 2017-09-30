@@ -6,6 +6,9 @@
 		return false;
 	}
 
+	const browserInfo = await browser.runtime.getBrowserInfo();
+	browserInfo.versionMajor = parseInt(/^(\d+)\./.exec(browserInfo.version)[1], 10);
+
 	//thank you: https://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex
 	function escapeRegExp(str) {
 		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
@@ -55,10 +58,20 @@
 		}
 	}
 
+	function isHandlerUrl(url){
+		return url.indexOf(browser.extension.getURL("handler.html")) === 0;
+	}
+
 	browser.tabs.onActivated.addListener(async ({tabId, windowId}) => {
+		const tabUrl = (await browser.tabs.get(tabId)).url;
+		if(!isHandlerUrl(tabUrl)) return;
+		browser.history.deleteUrl({
+			url: tabUrl,
+		});
+		const url = parseQuery(tabUrl).url;
 		browser.webRequest.onBeforeSendHeaders.addListener(
 			async function handler(e){
-				if(e.originUrl.indexOf(browser.extension.getURL("handler.html")) !== 0) {
+				if(!isHandlerUrl(e.originUrl)) {
 					browser.webRequest.onBeforeSendHeaders.removeListener(handler);
 					return;
 				};
@@ -66,9 +79,6 @@
 				requestData.headers = JSON.parse(requestData.headers);
 				browser.webRequest.onBeforeSendHeaders.removeListener(handler);
 				e.requestHeaders = requestData.headers;
-				await browser.history.deleteUrl({
-					url: e.originUrl,
-				});
 				return {requestHeaders: e.requestHeaders};
 			},
 			{
@@ -77,6 +87,12 @@
 			},
 			["blocking", "requestHeaders"],
 		);
+		if(browserInfo.versionMajor >= 57){
+			browser.tabs.update(tabId, {
+				url,
+				loadReplace: true,
+			});
+		}
 	})
 
 	browser.tabs.onCreated.addListener(tab => {
