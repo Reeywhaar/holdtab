@@ -20,10 +20,13 @@ function sleep(n){
 	});
 };
 
-function main(){
+async function main(){
 	const data = parseQuery(window.location);
 	if(!("url" in data)) return;
 	document.title = data.url;
+	if("nogo" in data){
+		await sleep(1000);
+	}
 	window.addEventListener("focus", async (e) => {
 		window.location.replace(data.url);
 	});
