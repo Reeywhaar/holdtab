@@ -106,7 +106,7 @@
 					const nogo = browserInfo.versionMajor >= 57 ? "&nogo=true" : "";
 					const handlerURL = browser.extension.getURL(`handler.html?url=${encodeURIComponent(e.url)}&headers=${encodeURIComponent(JSON.stringify(e.requestHeaders))}${nogo}`);
 					browser.webRequest.onBeforeSendHeaders.removeListener(handler);
-					// well, fuck, instead of line below I need a hack, because of security error in ff55
+					// well, instead of line below I need a hack, because of security error in ff55
 					// return {redirectUrl: handlerURL}
 					await browser.tabs.update(tab.id, {url: handlerURL});
 					return {cancel: true};
