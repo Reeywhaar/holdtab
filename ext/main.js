@@ -60,7 +60,6 @@
 
 	function isHoldable(url){
 		if(!state.isWebRegex.test(url)) return false;
-		if(isHandlerUrl(url)) return false;
 		url = new URL(url);
 		if(data.mode === "enable"){
 			return data.regex.test(url.host);
