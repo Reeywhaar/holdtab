@@ -51,6 +51,7 @@
 
 	function isHoldable(url){
 		url = new URL(url);
+		if(url.protocol === "moz-extension:") return false;
 		if(data.mode === "enable"){
 			return data.regex.test(url.host);
 		} else {
