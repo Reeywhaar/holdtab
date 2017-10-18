@@ -6,8 +6,13 @@
 		return false;
 	}
 
-	const browserInfo = await browser.runtime.getBrowserInfo();
-	browserInfo.versionMajor = parseInt(/^(\d+)\./.exec(browserInfo.version)[1], 10);
+	const state = {
+		processed: new Set(),
+		isWebRegex: /^https?:/i,
+		browserInfo: await browser.runtime.getBrowserInfo(),
+	}
+
+	state.browserInfo.versionMajor = parseInt(/^(\d+)\./.exec(state.browserInfo.version)[1], 10);
 
 	//thank you: https://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex
 	function escapeRegExp(str) {
@@ -49,18 +54,19 @@
 		data = await getData();
 	});
 
+	function isHandlerUrl(url){
+		return url.indexOf(browser.extension.getURL("handler.html")) === 0;
+	}
+
 	function isHoldable(url){
+		if(!state.isWebRegex.test(url)) return false;
+		if(isHandlerUrl(url)) return false;
 		url = new URL(url);
-		if(url.protocol === "moz-extension:") return false;
 		if(data.mode === "enable"){
 			return data.regex.test(url.host);
 		} else {
 			return !data.regex.test(url.host);
 		}
-	}
-
-	function isHandlerUrl(url){
-		return url.indexOf(browser.extension.getURL("handler.html")) === 0;
 	}
 
 	browser.tabs.onActivated.addListener(async ({tabId, windowId}) => {
@@ -88,7 +94,7 @@
 			},
 			["blocking", "requestHeaders"],
 		);
-		if(browserInfo.versionMajor >= 57){
+		if(state.browserInfo.versionMajor >= 57){
 			browser.tabs.update(tabId, {
 				url,
 				loadReplace: true,
@@ -96,15 +102,23 @@
 		}
 	})
 
+	browser.tabs.onUpdated.addListener((id, info) => {
+		if(state.processed.has(id)) return;
+		if("url" in info && !isHoldable(info.url)){
+			state.processed.add(id);
+		}
+	});
+
 	browser.tabs.onCreated.addListener(tab => {
 		browser.webRequest.onBeforeSendHeaders.addListener(
 			async function handler(e){
-				if((await browser.tabs.get(tab.id)).active){
+				if((await browser.tabs.get(tab.id)).active || state.processed.has(tab.id)){
 					browser.webRequest.onBeforeSendHeaders.removeListener(handler);
 					return;
 				}
+				state.processed.add(tab.id);
 				if(e.type === "main_frame" && isHoldable(e.url)){
-					const nogo = browserInfo.versionMajor >= 57 ? "&nogo=true" : "";
+					const nogo = state.browserInfo.versionMajor >= 57 ? "&nogo=true" : "";
 					const handlerURL = browser.extension.getURL(`handler.html?url=${encodeURIComponent(e.url)}&headers=${encodeURIComponent(JSON.stringify(e.requestHeaders))}${nogo}`);
 					browser.webRequest.onBeforeSendHeaders.removeListener(handler);
 					// well, instead of line below I need a hack, because of security error in ff55
@@ -119,5 +133,9 @@
 			},
 			["blocking", "requestHeaders"],
 		);
+	});
+
+	browser.tabs.onRemoved.addListener(id => {
+		state.processed.delete(id);
 	});
 })()
